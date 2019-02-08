@@ -115,7 +115,7 @@ class BoundingBoxes(object):
 
                 assert(bb.shape == (4,2))
 
-                bbs.append(BoundingBox(bb.astype(int)))
+                bbs.append(BoundingBox(bb))
 
         return cls(bbs)
 
@@ -258,8 +258,12 @@ class BoundingBox:
         self.points = ((np.dot(R, (self.points - c).T)).T + c).astype(np.int)
 
     def plot(self, ax, color=None):
-        points = np.vstack((self.points, self.points[0]))
-        ax.plot(points[:, 1], points[:, 0], color=color)
+        #points = np.vstack((self.points, self.points[0]))
+        #ax.plot(points[:, 1], points[:, 0], color=color)
+        # Make the width segments (orientation of the plate) yellow 
+        shifted = np.roll(self.points, -1, 0)
+        box = zip(zip(self.points[:,1], shifted[:,1]), zip(self.points[:,0], shifted[:,0]), ('y', 'g', 'y', 'g'))
+        ax.plot(*[arg for line in box for arg in line])
 
     def zoom(self, factor, center):
         T = np.array(
