@@ -42,7 +42,8 @@ class Image(object):
         # ANGLE IN RADIANS
         if center is not None:
             center = (center[1], center[0])
-        self.img = rotate(self.img, angle/np.pi*180, center=center, mode='symmetric', preserve_range=True).astype(self.img.dtype)
+        self.img = rotate(self.img, angle/np.pi*180, center=center,
+                mode='edge', preserve_range=True).astype(self.img.dtype)
 
     def rotated(self, *args, **kwargs):
         i = self.copy()
