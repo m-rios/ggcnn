@@ -261,8 +261,10 @@ class BoundingBox:
         #points = np.vstack((self.points, self.points[0]))
         #ax.plot(points[:, 1], points[:, 0], color=color)
         # Make the width segments (orientation of the plate) yellow 
+        if color is None:
+            color = 'y'
         shifted = np.roll(self.points, -1, 0)
-        box = zip(zip(self.points[:,1], shifted[:,1]), zip(self.points[:,0], shifted[:,0]), ('y', 'g', 'y', 'g'))
+        box = zip(zip(self.points[:,1], shifted[:,1]), zip(self.points[:,0], shifted[:,0]), (color, 'g', color, 'g'))
         ax.plot(*[arg for line in box for arg in line])
 
     def zoom(self, factor, center):
@@ -312,6 +314,17 @@ class Grasp:
             iou = self_bb.iou(bb)
             max_iou = max(max_iou, iou)
         return max_iou
+
+    def arg_max_iou(self, bbs):
+        self_bb = self.as_bb
+        max_iou = 0
+        m = None
+        for i,bb in enumerate(bbs):
+            iou = self_bb.iou(bb)
+            if iou > max_iou:
+                max_iou = iou
+                m = i
+        return m
 
     def plot(self, ax, color=None):
         self.as_bb.plot(ax, color)
