@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 from skimage.draw import polygon
 from skimage.feature import peak_local_max
+import pandas as pd
 
 
 def _bb_text_to_no(l, offset=(0, 0)):
@@ -76,46 +77,43 @@ class BoundingBoxes(object):
         return cls(bbs)
 
     @classmethod
-    def load_as_jacquard(cls, fname):
+    def load_as_jacquard(cls, fname, sizes):
         """
             Each line in jacquard is a grasp in the form: x;y;theta (degrees)
             ;width;gripper size. This function converts the grasp to corner
             coordinates
         """
         bbs = []
-        with open(fname) as f:
-            while True:
-                # Load 4 lines at a time, corners of bounding box.
-                grasp = f.readline()
-                if not grasp:
-                    break  # EOF
-                raw_grasp = grasp.split(';')
-                x, y, theta, width, size = [float(field) for field in raw_grasp]
-                theta = np.radians(float(theta))
-                # Vertices w.r.t. grasp center
-                x_off = width/2.0
-                y_off = size/2.0
-                bb = np.array([
-                    [x_off, y_off ,1],
-                    [-x_off, y_off ,1],
-                    [-x_off, -y_off ,1],
-                    [x_off, -y_off ,1]
-                    ]).T
-                assert(bb.shape == (3,4))
-                # Transformation matrix to image frame of reference
-                T = np.array([
-                    [np.cos(theta), np.sin(theta), 0],
-                    [-np.sin(theta), np.cos(theta), 0],
-                    [x, y, 1]
-                    ]).T
-                # Apply transformation and swap coordinates for row/col
-                # coordinates
-                bb = np.matmul(T, bb).astype(int)
-                bb = bb[[1,0],:].T
+        grasps = pd.read_csv(fname, delimiter=';', names='x;y;theta;opening;size'.split(';'))
+        grasps.drop_duplicates(subset=['x','y'], inplace=True)
+        for id, grasp in grasps.iterrows():
+            x, y, theta, width, size = grasp
 
-                assert(bb.shape == (4,2))
+            theta = np.radians(float(theta))
+            # Vertices w.r.t. grasp center
+            x_off = width/2.0
+            y_off = size/2.0
+            bb = np.array([
+                [x_off, y_off ,1],
+                [-x_off, y_off ,1],
+                [-x_off, -y_off ,1],
+                [x_off, -y_off ,1]
+                ]).T
+            assert(bb.shape == (3,4))
+            # Transformation matrix to image frame of reference
+            T = np.array([
+                [np.cos(theta), np.sin(theta), 0],
+                [-np.sin(theta), np.cos(theta), 0],
+                [x, y, 1]
+                ]).T
+            # Apply transformation and swap coordinates for row/col
+            # coordinates
+            bb = np.matmul(T, bb).astype(int)
+            bb = bb[[1,0],:].T
 
-                bbs.append(BoundingBox(bb))
+            assert(bb.shape == (4,2))
+
+            bbs.append(BoundingBox(bb))
 
         return cls(bbs)
 
